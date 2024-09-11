@@ -1,0 +1,354 @@
+
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+%matplotlib inline
+
+
+df1 = pd.read_csv(r'C:\Users\Sudhamsh GVS\Downloads\Spam-Email-Classification-main\Spam-Email-Classification-main\spam_or_not.csv')
+# displaying the first five rows of the dataframe
+df1.tail() 
+
+df1.shape 
+df1.info() 
+df1.describe() 
+df1['email'].isnull().sum()
+
+
+df1['email'].fillna(method = 'ffill', inplace = True)
+df1['email'].isnull().sum()
+
+
+data['email'].fillna(method = 'ffill', inplace = True)
+data['email'].isnull().sum()
+
+plt.figure(figsize=(3,3))
+spam_ham = pd.value_counts(df1['label'],sort = True)
+spam_ham.plot(kind = 'pie')
+plt.title('SPAM (1) vs HAM (0)')
+plt.show()
+
+
+from sklearn.preprocessing import LabelEncoder
+le=LabelEncoder()
+
+
+df2=pd.read_csv(r'C:\Users\Sudhamsh GVS\Downloads\spam emial\spam.csv')
+df2['email']=df2['Message']
+df2['label']=le.fit_transform(df2['Category'])
+
+
+df2.head()
+
+
+df2=df2.drop(columns=['Category','Message'])
+
+
+joined_df = pd.concat([df1, df2], ignore_index=True)
+
+joined_df.to_csv('C:/Users/Sudhamsh GVS/Downloads/joined_data.csv', index=False)  # Change 'joined_data.csv' to your desired file path
+
+print(joined_df)
+
+
+data=pd.read_csv(r'C:\Users\Sudhamsh GVS\Desktop\spam_classification_app\joined_data.csv')
+
+
+from nltk.tokenize import word_tokenize
+from nltk.corpus import stopwords
+import string
+
+def preprocess_text(text):
+    # Lowercase
+    text = text.lower()
+    # Remove punctuation
+    text = text.translate(str.maketrans('', '', string.punctuation))
+    # Tokenization
+    tokens = word_tokenize(text)
+    # Remove stopwords
+    tokens = [word for word in tokens if word not in stopwords.words('english')]
+    return ' '.join(tokens)
+
+data['email'] = data['email'].apply(preprocess_text)
+
+
+
+
+import nltk
+from nltk.corpus import stopwords
+from nltk.tokenize import word_tokenize
+
+nltk.download('stopwords')
+nltk.download('punkt')
+
+# Lowercase and remove punctuation
+data['email'] = data['email'].str.lower()
+data['email'] = data['email'].str.replace(r'[^\w\s]', '')
+
+# Tokenization
+data['email'] = data['email'].apply(word_tokenize)
+
+# Remove stopwords
+stop_words = set(stopwords.words('english'))
+data['email'] = data['email'].apply(lambda x: [word for word in x if word not in stop_words])
+
+
+
+from sklearn.feature_extraction.text import TfidfVectorizer
+
+# Define a function to join the list of tokens into a string, handling non-string values
+def join_tokens(tokens):
+    # Convert each element to a string and join
+    return ' '.join(str(token) for token in tokens)
+
+# Apply the function to join tokens, handling non-string values
+data['email'] = data['email'].apply(lambda x: join_tokens(x) if isinstance(x, list) else str(x))
+
+tfidf_vectorizer = TfidfVectorizer(max_features=5000)
+X = tfidf_vectorizer.fit_transform(data['email'])
+
+# X is your feature matrix
+
+
+
+from gensim.models import Word2Vec
+from nltk.tokenize import word_tokenize
+from nltk.corpus import stopwords
+import string
+import pandas as pd
+import numpy as np
+
+# Load your dataset
+data = pd.read_csv("C:/Users/Sudhamsh GVS/Downloads/joined_data.csv")  # Load your CSV data
+
+# Preprocess your text data
+def preprocess_text(text):
+    text = text.lower()
+    text = text.translate(str.maketrans('', '', string.punctuation))
+    tokens = word_tokenize(text)
+    tokens = [word for word in tokens if word not in stopwords.words('english')]
+    return tokens
+
+# Preprocess the email text
+data['processed_email'] = data['email'].apply(preprocess_text)
+
+# Train Word2Vec model
+model = Word2Vec(sentences=data['processed_email'], vector_size=100, window=5, min_count=1, sg=0)
+
+# Function to generate document vectors
+def document_vector(word2vec_model, doc):
+    doc = [word for word in doc if word in word2vec_model.wv.key_to_index]
+    if not doc:
+        return np.zeros(word2vec_model.vector_size)
+    else:
+        return np.mean(word2vec_model.wv[doc], axis=0)
+
+
+data['document_vector'] = data['processed_email'].apply(lambda x: document_vector(model, x))
+
+
+
+from sklearn.model_selection import train_test_split
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import accuracy_score, classification_report
+
+# Split the data into train and test sets
+X = data['document_vector'].to_list()
+y = data['label']
+
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+
+
+# EXTRACTING FEATURES
+
+# 
+# TOKENIZING
+
+
+# CountVectorizer() randomly assigns number to each words
+from sklearn.feature_extraction.text import CountVectorizer
+cv = CountVectorizer()
+X_train = cv.fit_transform(X_train)
+X_test = cv.transform(X_test)
+
+
+# # MODELLING
+
+
+# SUPPORT VECTOR MACHINE
+
+from sklearn.svm import SVC
+from sklearn.metrics import classification_report
+model = SVC(kernel='sigmoid',C=1,gamma=1)
+model.fit(X_train, y_train)
+
+y_pred = model.predict(X_test)
+
+# ACCURACY
+print(model.score(X_test, y_test))
+
+
+# Classification Report
+from sklearn.metrics import classification_report
+report = classification_report(y_test,y_pred)
+print(report)
+
+# Confusion Matrix
+from sklearn.metrics import confusion_matrix
+cf_matrix = confusion_matrix(y_test,y_pred)
+print(cf_matrix)
+plt.figure(figsize=(4,3))
+plt.title('Confusion Matrix Visualization')
+sns.heatmap(cf_matrix, annot=True, fmt='', cmap='Blues')
+
+
+from sklearn.neighbors import KNeighborsClassifier
+knn=KNeighborsClassifier(n_neighbors=3)
+knn.fit(X_train,y_train)
+
+y_pred=knn.predict(X_test)
+# Classification Report
+from sklearn.metrics import classification_report
+report = classification_report(y_test,y_pred)
+print(report)
+
+
+from sklearn.ensemble import RandomForestClassifier
+rf=RandomForestClassifier(n_estimators=100)
+rf.fit(X_train,y_train)
+
+y_pred=rf.predict(X_test)
+# Classification Report
+from sklearn.metrics import classification_report
+report = classification_report(y_test,y_pred)
+print(report)
+
+
+from sklearn.ensemble import AdaBoostClassifier
+adab=AdaBoostClassifier(n_estimators=100)
+adab.fit(X_train,y_train)
+
+
+y_pred=adab.predict(X_test)
+# Classification Report
+from sklearn.metrics import classification_report
+report = classification_report(y_test,y_pred)
+print(report)
+
+
+from sklearn.naive_bayes import MultinomialNB
+
+mnb= MultinomialNB()
+mnb.fit(X_train,y_train)
+y_pred=mnb.predict(X_test)
+# Classification Report
+from sklearn.metrics import classification_report
+report = classification_report(y_test,y_pred)
+print(report)
+
+
+from sklearn.ensemble import GradientBoostingClassifier
+gbm = GradientBoostingClassifier()
+gbm.fit(X_train,y_train)
+y_pred=gbm.predict(X_test)
+# Classification Report
+from sklearn.metrics import classification_report
+report = classification_report(y_test,y_pred)
+print(report)
+
+
+
+import xgboost as xgb
+xg = xgb.XGBClassifier()
+xg.fit(X_train,y_train)
+y_pred=xg.predict(X_test)
+# Classification Report
+from sklearn.metrics import classification_report
+report = classification_report(y_test,y_pred)
+print(report)
+
+
+
+from sklearn.neural_network import MLPClassifier
+elm = MLPClassifier(hidden_layer_sizes=(20, ), activation='logistic', solver='lbfgs')
+elm.fit(X_train,y_train)
+y_pred=elm.predict(X_test)
+# Classification Report
+from sklearn.metrics import classification_report
+report = classification_report(y_test,y_pred)
+print(report)
+
+
+
+
+import joblib
+joblib.dump(elm, 'C:/Users/Sudhamsh GVS/Desktop/spam_classification_app/spam_classification_model.pkl')
+
+
+
+loaded_model = joblib.load('spam_classification_model.pkl')
+
+
+model = joblib.load('C:/Users/Sudhamsh GVS/Desktop/spam_classification_app/spam_classification_model.pkl')
+
+
+
+from sklearn.neighbors import NearestCentroid
+nc = NearestCentroid()
+nc.fit(X_train,y_train)
+y_pred=nc.predict(X_test)
+# Classification Report
+from sklearn.metrics import classification_report
+report = classification_report(y_test,y_pred)
+print(report)
+
+
+
+
+from sklearn.linear_model import Perceptron
+perceptron = Perceptron(penalty='l1',l1_ratio=1)
+perceptron.fit(X_train,y_train)
+y_pred=perceptron.predict(X_test)
+# Classification Report
+from sklearn.metrics import classification_report
+report = classification_report(y_test,y_pred)
+print(report)
+
+
+
+
+from sklearn.linear_model import RidgeClassifier
+ridge = RidgeClassifier()
+ridge.fit(X_train,y_train)
+y_pred=ridge.predict(X_test)
+# Classification Report
+from sklearn.metrics import classification_report
+report = classification_report(y_test,y_pred)
+print(report)
+
+
+
+from sklearn.tree import DecisionTreeClassifier
+stump = DecisionTreeClassifier(max_depth=1)
+stump.fit(X_train,y_train)
+y_pred=stump.predict(X_test)
+# Classification Report
+from sklearn.metrics import classification_report
+report = classification_report(y_test,y_pred)
+print(report)
+
+
+
+from sklearn.neural_network import MLPClassifier
+mlp = MLPClassifier(hidden_layer_sizes=(100, 50), max_iter=1000)
+mlp.fit(X_train,y_train)
+y_pred=mlp.predict(X_test)
+# Classification Report
+from sklearn.metrics import classification_report,confusion_matrix
+report = classification_report(y_test,y_pred)
+print(report)
+
+print(confusion_matrix(y_test,y_pred))
+
